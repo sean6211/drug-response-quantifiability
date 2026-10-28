@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: "Predicting quantifiability from primary screens"
+message: "If you use this code, please cite the accompanying manuscript."
+type: software
+authors:
+  - family-names: Lim
+    given-names: Sean
+    email: sean78623@gmail.com
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/sean6211/drug-response-quantifiability"
+abstract: >-
+  Screening-stage features, ranking metrics, and the main-text comparisons
+  for predicting whether dose-response profiling will return a reportable potency.
