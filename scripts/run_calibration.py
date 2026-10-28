@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Calibration of the two-stage ranking on five-fold out-of-fold scores.
-
-Expected calibration error uses ten equal-width probability bins. The Brier
-score is the mean squared error of the predicted probabilities. These scores
-are rankings first; the manuscript reports them as such.
-"""
+"""ECE and Brier score for two-stage out-of-fold probabilities."""
 
 from __future__ import annotations
 

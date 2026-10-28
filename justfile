@@ -3,9 +3,6 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 default:
     @just --list
 
-walkthrough:
-    python examples/walkthrough.py
-
 prepare:
     python scripts/prepare_dataset.py
 
@@ -36,8 +33,4 @@ subgroup:
 calibration:
     python scripts/run_calibration.py
 
-external:
-    python scripts/run_external_amplitude.py --table examples/external_example.csv
-
-# Main-text comparisons. Run `just prepare` once before this.
 paper: outcomes cv ablation scaffold mechanism rolling importance subgroup

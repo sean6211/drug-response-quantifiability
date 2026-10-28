@@ -1,5 +1,3 @@
-"""Quantifiability label and the amplitude summaries in the main text."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -54,7 +52,6 @@ def amplitude_by_outcome(promoted: pd.DataFrame) -> pd.DataFrame:
 
 
 def mechanism_failure(promoted: pd.DataFrame) -> pd.DataFrame:
-    """Hill-fit failure among pairs that were active at 11 concentrations."""
     active = promoted.loc[promoted["active"] == 1]
     rows = []
     for mechanism, group in active.groupby("Mechanism", sort=True):
@@ -84,7 +81,6 @@ def mechanism_failure(promoted: pd.DataFrame) -> pd.DataFrame:
 
 
 def active_poor_count(promoted: pd.DataFrame) -> dict:
-    """EvE Bio's Active-Poor curation label among active-unquantifiable pairs."""
     unquantified = promoted.loc[
         promoted["Final_Category"] == "Active - Unquantified (11pt)"
     ]

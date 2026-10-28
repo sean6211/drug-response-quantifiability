@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Held-out subgroup table.
-
-Target class and screening category are scored with one gradient-boosted
-tree on the first stratified fold. Missed quantifiable pairs at a 50%
-budget are taken from a 500-tree random forest on that same fold, ranked
-over the whole fold.
-"""
+"""Subgroup metrics on the first held-out fold."""
 
 from __future__ import annotations
 

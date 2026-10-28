@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Leakage-safe rolling evaluation across EvE Bio releases.
-
-For each test release, training pairs are promoted pairs from earlier
-releases, and the nine compound and assay profile columns are recomputed
-from screening results strictly before that release. AUROC is the direct
-500-tree forest. Recall at 50% and the budget that retains 90% of potencies
-use the two-stage ranking with 300 trees per stage, compared with ranking
-by the reported screening maximum.
-"""
+"""Rolling release evaluation. Profiles are recomputed from earlier releases only."""
 
 from __future__ import annotations
 
@@ -101,11 +93,7 @@ def main() -> None:
     tested = int(table["test_n"].sum()) if len(table) else 0
     write_table(args.out, "rolling_policy.csv", table)
     if tested:
-        print(
-            f"Across {len(table)} releases, retaining 90% of potencies withholds "
-            f"{withheld:,} of {tested:,} profiling experiments "
-            f"({withheld / tested:.1%})."
-        )
+        print(f"{len(table)} releases, withheld {withheld:,} / {tested:,}")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,3 @@ authors:
 version: 0.1.0
 license: MIT
 repository-code: "https://github.com/sean6211/drug-response-quantifiability"
-abstract: >-
-  Screening-stage features, ranking metrics, and the main-text comparisons
-  for predicting whether dose-response profiling will return a reportable potency.

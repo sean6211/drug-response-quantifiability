@@ -1,10 +1,3 @@
-"""Promoted-pair matrix for the EvE Bio analysis.
-
-Random-split models use compound and assay profiles computed on the full
-screening matrix. Rolling evaluation replaces those nine columns with
-profiles computed from releases strictly before the test release.
-"""
-
 from __future__ import annotations
 
 import json
@@ -53,8 +46,6 @@ def _column(frame: pd.DataFrame, *names: str) -> pd.Series:
 
 @dataclass
 class Cohort:
-    """Row-aligned promoted pairs, feature matrix, and the history used for profiles."""
-
     X: np.ndarray
     y: np.ndarray
     y_active: np.ndarray
@@ -68,7 +59,6 @@ class Cohort:
         return self.X[:, indices]
 
     def with_historical_profiles(self, test_release: float) -> np.ndarray:
-        """Copy of ``X`` whose profile columns see only earlier releases."""
         features = self.X.copy()
         features[:, self.groups["profiles"]] = historical_profile_block(
             self.summary, self.meta, test_release
@@ -133,12 +123,6 @@ def historical_profile_block(
     meta: pd.DataFrame,
     test_release: float,
 ) -> np.ndarray:
-    """Nine profile columns from releases strictly before ``test_release``.
-
-    A compound or assay with no earlier history receives the mean of the
-    historical profiles. ``test_release`` larger than every release uses the
-    full matrix, which is the random-split representation.
-    """
     history = summary.loc[summary["rel"] < float(test_release) - 1e-9].copy()
     n_rows = len(meta)
     if history.empty:
@@ -236,11 +220,6 @@ def build_cohort(
     assays: pd.DataFrame,
     measurements: dict,
 ) -> Cohort:
-    """Assemble the promoted-pair matrix from EvE Bio tables.
-
-    ``measurements`` maps ``(compound_id, assay_id)`` to an array of shape
-    ``(n_points, 2)`` with concentration then activity, screening phase only.
-    """
     promoted = detailed.loc[as_flag(_column(detailed, "progressed", "Progressed"))].copy()
     promoted = promoted.reset_index(drop=True)
     if promoted.empty:
@@ -330,7 +309,6 @@ def build_cohort(
 
 
 def load_measurements(observed_points: Path, promoted_keys: pd.DataFrame) -> dict:
-    """Screening-phase points for promoted pairs only."""
     from collections import defaultdict
 
     buckets: dict[tuple, list] = defaultdict(list)
@@ -360,7 +338,6 @@ def load_measurements(observed_points: Path, promoted_keys: pd.DataFrame) -> dic
 
 
 def read_evebio(data_dir: Path) -> Cohort:
-    """Build the cohort from an EvE Bio release directory."""
     data_dir = Path(data_dir)
     detailed_cols = [
         "Assay_ID",

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Build the promoted-pair matrix from a local EvE Bio release.
-
-The release files stay outside this repository. Pass the directory that
-contains summary_result_table.csv, detailed_result_table.csv,
-observed_points_table.csv, compound_table.csv, and assay_table.csv.
-"""
+"""Build the promoted-pair matrix from a local EvE Bio release."""
 
 from __future__ import annotations
 

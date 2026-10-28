@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Five-fold comparison of the screening policies in the main performance table.
-
-The principal forest has 500 trees and is fit on the full training fold.
-Fingerprint-only and three-point-only forests have 300 trees. Logistic
-regression is fit on features standardized within the training fold.
-The two-stage score (300 trees per stage) is the operational ranking; on
-this split it changes AUROC only in the third decimal relative to the
-direct forest.
-"""
+"""Five-fold CV."""
 
 from __future__ import annotations
 

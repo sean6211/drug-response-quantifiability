@@ -1,11 +1,3 @@
-"""Screening-stage features used to predict quantifiability.
-
-The 16 three-point features are the representation the main text isolates.
-Morgan fingerprints (radius 2, 1,024 bits) and the assay-metadata levels below
-complete the 1,074-column matrix. Levels are the ones present among promoted
-EvE Bio pairs, so a refit stays aligned with that matrix.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -79,7 +71,6 @@ MECHANISMS = [
 ]
 TECHNOLOGIES = ["FRET", "Luminescence", "TR-FRET"]
 
-# prefix, source column, fixed levels. Order matches the published matrix.
 METADATA_BLOCKS = [
     ("scr_cat", "Scr_Category_Detailed", SCREENING_CATEGORIES),
     ("prog", "progression_reason", PROGRESSION_REASONS),
@@ -91,11 +82,6 @@ METADATA_BLOCKS = [
 
 
 def measurement_features(concentrations, activities) -> np.ndarray:
-    """Fifteen summaries of one pair's three-point screen.
-
-    The reported screening maximum is separate: EvE Bio stores it as
-    ``Scr_Observed_Max``, the maximum of the per-concentration means.
-    """
     concentrations = np.asarray(concentrations, dtype=np.float64)
     activities = np.asarray(activities, dtype=np.float64)
     if concentrations.shape != activities.shape:
@@ -134,7 +120,6 @@ def measurement_features(concentrations, activities) -> np.ndarray:
 
 
 def reported_screening_max(concentrations, activities) -> float:
-    """Maximum of the per-concentration mean activities."""
     concentrations = np.asarray(concentrations, dtype=np.float64)
     activities = np.asarray(activities, dtype=np.float64)
     ok = np.isfinite(concentrations) & np.isfinite(activities)
@@ -149,32 +134,7 @@ def reported_screening_max(concentrations, activities) -> float:
     return float(max(means))
 
 
-def screen_feature_frame(measurements: pd.DataFrame) -> pd.DataFrame:
-    """One row of 16 three-point features per compound-assay pair.
-
-    ``measurements`` is long-form, with columns ``compound_id``, ``assay_id``,
-    ``concentration``, and ``activity``. Pairs with no finite points get zeros.
-    """
-    required = {"compound_id", "assay_id", "concentration", "activity"}
-    missing = required.difference(measurements.columns)
-    if missing:
-        raise ValueError(f"measurements is missing columns: {sorted(missing)}")
-    rows = []
-    keys = []
-    grouped = measurements.groupby(["compound_id", "assay_id"], sort=False)
-    for (compound_id, assay_id), group in grouped:
-        feats = measurement_features(group["concentration"], group["activity"])
-        reported = reported_screening_max(group["concentration"], group["activity"])
-        rows.append(np.concatenate([feats, np.array([reported], dtype=np.float32)]))
-        keys.append((compound_id, assay_id))
-    frame = pd.DataFrame(rows, columns=THREE_POINT_COLUMNS)
-    frame.insert(0, "assay_id", [key[1] for key in keys])
-    frame.insert(0, "compound_id", [key[0] for key in keys])
-    return frame
-
-
 def morgan_bits(smiles: str) -> np.ndarray:
-    """Radius-2 Morgan fingerprint. Unparseable SMILES return the zero vector."""
     out = np.zeros(FP_BITS, dtype=np.float32)
     if not isinstance(smiles, str) or not smiles.strip():
         return out
@@ -186,7 +146,6 @@ def morgan_bits(smiles: str) -> np.ndarray:
 
 
 def murcko_scaffold(smiles: str, compound_id: str) -> str:
-    """Bemis-Murcko scaffold, or a compound-specific label when none exists."""
     fallback = f"NOSCAF_{compound_id}"
     if not isinstance(smiles, str) or not smiles.strip():
         return fallback
@@ -201,7 +160,6 @@ def murcko_scaffold(smiles: str, compound_id: str) -> str:
 
 
 def one_hot(series: pd.Series, categories: list[str], prefix: str) -> pd.DataFrame:
-    """Dummy columns for a fixed level set, including levels absent from ``series``."""
     observed = set(series.dropna().astype(str))
     unexpected = sorted(observed.difference(categories))
     if unexpected:

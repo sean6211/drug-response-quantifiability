@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Random versus Bemis-Murcko scaffold-disjoint evaluation.
-
-Each feature set is a 300-tree class-balanced forest. Scaffold groups keep
-every test compound off the scaffolds seen in training. Compounds with no
-ring scaffold each receive their own group, so they are not pooled together.
-"""
+"""Random split vs Bemis-Murcko scaffold split."""
 
 from __future__ import annotations
 

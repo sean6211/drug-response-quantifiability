@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Leave-one-mechanism-family-out transfer.
-
-Each of the five assay-mechanism families is held out in turn. Forests have
-300 trees. The three feature sets are fingerprints, fingerprints plus the
-three-point block, and those plus the mechanism-family indicators.
-
-Mechanism indicators are the dummy columns from the full promoted table.
-A held-out family is therefore a column that is zero throughout training
-and one on the test rows. That is the encoding used for the published
-comparison, where adding it barely changed AUROC.
-"""
+"""Leave-one-mechanism-family-out."""
 
 from __future__ import annotations
 

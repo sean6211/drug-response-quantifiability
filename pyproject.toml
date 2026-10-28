@@ -1,7 +1,7 @@
 [project]
 name = "quantifiability"
 version = "0.1.0"
-description = "Predict whether dose-response profiling will return a reportable potency"
+description = "EvE Bio quantifiability analysis"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

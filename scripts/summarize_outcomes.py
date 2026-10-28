@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Outcome counts, amplitude, and mechanism-family failure among promoted pairs.
-
-These are the descriptive results that define quantifiability. They do not
-fit a model and they do not need the fingerprint matrix.
-"""
+"""Outcome counts, amplitude, and mechanism failure for promoted pairs."""
 
 from __future__ import annotations
 

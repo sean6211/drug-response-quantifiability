@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Summed Gini importance by feature group for one full-data forest.
-
-This is the decomposition behind the screening-versus-structure comparison.
-It refits the 500-tree forest on every promoted pair, so it describes that
-fit rather than a held-out test set.
-"""
+"""Gini importance summed by feature group."""
 
 from __future__ import annotations
 

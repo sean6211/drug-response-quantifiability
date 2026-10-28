@@ -1,10 +1,3 @@
-"""Ranking metrics for a profiling budget.
-
-Recall at fraction ``f`` uses the top ``floor(f * n)`` pairs. The budget
-required to retain a fraction ``r`` of reportable potencies is the shortest
-prefix of the ranking whose captured potencies reach that fraction.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -22,7 +15,6 @@ def _as_arrays(y_true, scores):
 
 
 def _order(scores: np.ndarray) -> np.ndarray:
-    # Default argsort matches the analysis notebook, including tie order.
     return np.argsort(-scores)
 
 
@@ -33,7 +25,6 @@ def _prefix_length(n: int, fraction: float) -> int:
 
 
 def recall_at_budget(y_true, scores, fraction: float) -> float:
-    """Fraction of positives captured in the top ``fraction`` of the ranking."""
     y_true, scores = _as_arrays(y_true, scores)
     total = float(y_true.sum())
     if total <= 0:
@@ -44,7 +35,6 @@ def recall_at_budget(y_true, scores, fraction: float) -> float:
 
 
 def yield_at_budget(y_true, scores, fraction: float) -> float:
-    """Precision of the top ``fraction`` of the ranking."""
     y_true, scores = _as_arrays(y_true, scores)
     k = _prefix_length(len(y_true), fraction)
     picked = y_true[_order(scores)][:k]
@@ -52,7 +42,6 @@ def yield_at_budget(y_true, scores, fraction: float) -> float:
 
 
 def retention_prefix_length(y_true, scores, retention: float) -> int:
-    """Smallest prefix that keeps ``retention`` of all positives."""
     y_true, scores = _as_arrays(y_true, scores)
     if not 0 < retention <= 1:
         raise ValueError("retention must be in (0, 1]")
@@ -65,13 +54,11 @@ def retention_prefix_length(y_true, scores, retention: float) -> int:
 
 
 def budget_at_retention(y_true, scores, retention: float) -> float:
-    """Prefix length as a fraction of the test set."""
     y_true, scores = _as_arrays(y_true, scores)
     return retention_prefix_length(y_true, scores, retention) / len(y_true)
 
 
 def ranking_metrics(y_true, scores) -> dict[str, float]:
-    """AUROC, AUPRC, recall at 50%, and yield at 25%."""
     y_true, scores = _as_arrays(y_true, scores)
     if len(np.unique(y_true)) < 2:
         auroc = float("nan")
@@ -93,7 +80,6 @@ def brier_score(y_true, probabilities) -> float:
 
 
 def expected_calibration_error(y_true, probabilities, n_bins: int = 10) -> float:
-    """Absolute-gap ECE on ``n_bins`` equal-width probability bins."""
     y_true, probabilities = _as_arrays(y_true, probabilities)
     edges = np.linspace(0.0, 1.0, n_bins + 1)
     total = len(y_true)
@@ -113,7 +99,6 @@ def expected_calibration_error(y_true, probabilities, n_bins: int = 10) -> float
 
 
 def summarize_folds(fold_rows: list[dict], metric_keys: list[str]) -> dict[str, float]:
-    """Mean and NumPy standard deviation (ddof=0) across folds."""
     summary = {}
     for key in metric_keys:
         values = np.array([row[key] for row in fold_rows], dtype=float)

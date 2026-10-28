@@ -1,5 +1,3 @@
-"""Paths and table writing shared by the analysis scripts."""
-
 from __future__ import annotations
 
 import argparse

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Isolated feature blocks and the nested ablation.
-
-Isolated blocks use five stratified folds. Nested models add fingerprints,
-then historical profiles, then assay metadata, and use three stratified folds.
-Both use a 300-tree class-balanced forest fit on the full training fold.
-"""
+"""Feature-block ablation. Isolated blocks are 5-fold; nested models are 3-fold."""
 
 from __future__ import annotations
 

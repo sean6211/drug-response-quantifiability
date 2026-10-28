@@ -1,5 +1,3 @@
-"""Tests for the feature definitions, metrics, and leakage rule."""
-
 from __future__ import annotations
 
 import sys
@@ -11,14 +9,13 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from quantifiability.dataset import historical_profile_block  # noqa: E402
+from quantifiability.dataset import build_cohort, historical_profile_block  # noqa: E402
 from quantifiability.features import (  # noqa: E402
     FP_BITS,
     measurement_features,
     morgan_bits,
     murcko_scaffold,
     reported_screening_max,
-    screen_feature_frame,
 )
 from quantifiability.metrics import (  # noqa: E402
     budget_at_retention,
@@ -27,7 +24,6 @@ from quantifiability.metrics import (  # noqa: E402
     yield_at_budget,
 )
 from quantifiability.models import two_stage_scores  # noqa: E402
-from quantifiability.synthetic import synthetic_cohort  # noqa: E402
 
 
 class FeatureTests(unittest.TestCase):
@@ -55,14 +51,7 @@ class FeatureTests(unittest.TestCase):
     def test_empty_screen_is_zero(self):
         self.assertTrue(np.all(measurement_features([], []) == 0))
 
-    def test_screen_table_ranks_the_stronger_pair_higher(self):
-        points = pd.read_csv(Path(__file__).resolve().parents[1] / "examples" / "example_screen.csv")
-        table = screen_feature_frame(points)
-        ordered = table.sort_values("meas_mean_act", ascending=False)["compound_id"].tolist()
-        self.assertEqual(ordered[0], "C1")
-        self.assertEqual(ordered[-1], "C2")
-
-    def test_fingerprint_width_and_scaffold_groups(self):
+    def test_fingerprint_and_scaffold(self):
         bits = morgan_bits("c1ccccc1")
         self.assertEqual(bits.shape, (FP_BITS,))
         self.assertGreater(bits.sum(), 0)
@@ -80,7 +69,7 @@ class MetricTests(unittest.TestCase):
         self.assertEqual(retention_prefix_length(labels, scores, 0.5), 2)
         self.assertAlmostEqual(budget_at_retention(labels, scores, 1.0), 1.0)
 
-    def test_perfect_ranking_keeps_half_the_budget_at_full_recall_when_balanced(self):
+    def test_recall_budget(self):
         labels = np.array([1, 1, 0, 0])
         scores = np.array([0.9, 0.8, 0.2, 0.1])
         self.assertAlmostEqual(recall_at_budget(labels, scores, 0.5), 1.0)
@@ -88,15 +77,14 @@ class MetricTests(unittest.TestCase):
 
 
 class CohortTests(unittest.TestCase):
-    def test_matrix_width_matches_the_paper(self):
-        cohort = synthetic_cohort()
-        self.assertEqual(cohort.X.shape, (32, 1074))
+    def test_matrix_width(self):
+        cohort = _small_cohort()
+        self.assertEqual(cohort.X.shape, (4, 1074))
         self.assertEqual(len(cohort.groups["three_point"]), 16)
         self.assertEqual(len(cohort.groups["fingerprints"]), 1024)
         self.assertEqual(len(cohort.groups["profiles"]), 9)
-        self.assertEqual(cohort.y.sum() + (cohort.y == 0).sum(), 32)
 
-    def test_historical_profiles_ignore_the_test_release(self):
+    def test_historical_profiles(self):
         summary = pd.DataFrame(
             {
                 "Compound_ID": ["c1", "c1", "c2"],
@@ -114,16 +102,13 @@ class CohortTests(unittest.TestCase):
         )
         meta = pd.DataFrame({"Compound_ID": ["c1", "c2"], "Assay_ID": ["a1", "a1"]})
         before = historical_profile_block(summary, meta, test_release=2.0)
-        # c2 is absent before release 2, so it receives c1's release-1 profile (OMax 80),
-        # not its own release-2 OMax of 50.
-        self.assertAlmostEqual(before[1, 2], 80.0)  # mean_omax
-        self.assertAlmostEqual(before[0, 0], 1.0)  # active_fraction from the one earlier row
-        # The assay's earlier history is a single active call, not the later c2 row.
-        self.assertAlmostEqual(before[0, 7], 1.0)  # assay_n_active
+        self.assertAlmostEqual(before[1, 2], 80.0)
+        self.assertAlmostEqual(before[0, 0], 1.0)
+        self.assertAlmostEqual(before[0, 7], 1.0)
         after = historical_profile_block(summary, meta, test_release=3.0)
         self.assertAlmostEqual(after[1, 2], 50.0)
 
-    def test_two_stage_separates_an_easy_label(self):
+    def test_two_stage(self):
         rng = np.random.default_rng(0)
         labels = np.zeros(80, dtype=int)
         labels[::2] = 1
@@ -140,6 +125,68 @@ class CohortTests(unittest.TestCase):
         )
         held_out = labels[60:]
         self.assertGreater(scores[held_out == 1].mean(), scores[held_out == 0].mean())
+
+
+def _small_cohort():
+    compounds = pd.DataFrame(
+        {
+            "Compound_ID": ["C0", "C1"],
+            "SMILES": ["c1ccccc1", "CCO"],
+        }
+    )
+    assays = pd.DataFrame(
+        [
+            {
+                "Assay_ID": "A0",
+                "Class": "7TM",
+                "Mode": "Agonist",
+                "Mechanism": "Barr2 Recruitment",
+                "Technology": "TR-FRET",
+            },
+            {
+                "Assay_ID": "A1",
+                "Class": "Kinase",
+                "Mode": "Binding",
+                "Mechanism": "Competition Binding",
+                "Technology": "FRET",
+            },
+        ]
+    )
+    rows = []
+    measurements = {}
+    conc = np.array([1e-6, 1e-5, 1e-4])
+    for i, (compound_id, assay_id) in enumerate(
+        [("C0", "A0"), ("C0", "A1"), ("C1", "A0"), ("C1", "A1")]
+    ):
+        activity = np.array([70, 80, 90]) if i % 2 == 0 else np.array([5, 8, 10])
+        measurements[(compound_id, assay_id)] = np.column_stack([conc, activity])
+        final = "Active - Quantified (11pt)" if i % 2 == 0 else "Inactive (11pt)"
+        assay = assays.loc[assays["Assay_ID"] == assay_id].iloc[0]
+        rows.append(
+            {
+                "Compound_ID": compound_id,
+                "Assay_ID": assay_id,
+                "Class": assay["Class"],
+                "Mode": assay["Mode"],
+                "Mechanism": assay["Mechanism"],
+                "Scr_Observed_Max": float(activity.mean()),
+                "Scr_Category_Detailed": "Compound of Interest",
+                "progressed": True,
+                "progression_reason": "Screening Result",
+                "Prof_Max": float(activity.max()),
+                "Prof_Category_Detailed": "Active",
+                "Final_Category": final,
+                "Is_Mutant_Flag": False,
+                "Release": "4",
+                "Result": final,
+                "OMax": float(activity.mean()),
+            }
+        )
+    detailed = pd.DataFrame(rows)
+    summary = detailed[
+        ["Compound_ID", "Assay_ID", "Class", "Mode", "Mechanism", "Result", "OMax", "Release"]
+    ]
+    return build_cohort(detailed, summary, compounds, assays, measurements)
 
 
 if __name__ == "__main__":

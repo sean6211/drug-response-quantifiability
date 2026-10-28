@@ -1,5 +1,3 @@
-"""Shared splitters for the main-text comparisons."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -21,7 +19,6 @@ def iter_splits(x, y, n_splits: int, seed: int, groups=None):
 
 
 def fold_table(records: list[dict]) -> pd.DataFrame:
-    """Mean and standard deviation of each policy, one row per policy."""
     frame = pd.DataFrame(records)
     rows = []
     for policy, group in frame.groupby("policy", sort=False):

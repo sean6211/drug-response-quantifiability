@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""External check: rank a matched screen by its maximum activity.
-
-This does not transfer the EvE Bio three-point model. Most ToxCast/Tox21
-screens in the comparison are a single concentration, so the 16-feature
-representation cannot be rebuilt. The input is an already matched table
-with columns ``screen_max``, ``quantified``, and ``endpoint``. Building
-that table from invitroDB is a data step and is not part of this release.
-
-Five-fold rows score each held-out fold with the screening maximum itself.
-Endpoint-held-out rows do the same with groups defined by ``endpoint``.
-"""
+"""Rank a matched table by screen_max. Columns: endpoint, screen_max, quantified."""
 
 from __future__ import annotations
 
