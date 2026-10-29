@@ -106,3 +106,37 @@ def summarize_folds(fold_rows: list[dict], metric_keys: list[str]) -> dict[str, 
         summary[f"{key}_std"] = float(np.nanstd(values))
     summary["n_folds"] = len(fold_rows)
     return summary
+
+
+def cohens_d(a, b) -> float:
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    if a.size < 2 or b.size < 2:
+        return float("nan")
+    pooled = ((a.size - 1) * a.var(ddof=1) + (b.size - 1) * b.var(ddof=1)) / (
+        a.size + b.size - 2
+    )
+    if pooled <= 0:
+        return float("nan")
+    return float((a.mean() - b.mean()) / np.sqrt(pooled))
+
+
+def cluster_bootstrap(clusters, statistic, n_resamples: int = 2000, seed: int = 42) -> np.ndarray:
+    """Resample whole clusters with replacement; `statistic` maps row indices to values.
+
+    Resamples for which `statistic` returns None are dropped.
+    """
+    members: dict = {}
+    for row, cluster in enumerate(clusters):
+        members.setdefault(cluster, []).append(row)
+    blocks = [np.asarray(rows, dtype=np.int64) for rows in members.values()]
+    rng = np.random.default_rng(seed)
+    draws = []
+    for _ in range(n_resamples):
+        picked = rng.integers(0, len(blocks), size=len(blocks))
+        value = statistic(np.concatenate([blocks[i] for i in picked]))
+        if value is not None:
+            draws.append(np.atleast_1d(np.asarray(value, dtype=float)))
+    if not draws:
+        return np.empty((0, 0))
+    return np.vstack(draws)

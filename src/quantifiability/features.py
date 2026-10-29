@@ -79,6 +79,14 @@ METADATA_BLOCKS = [
     ("mech", "Mechanism", MECHANISMS),
     ("tech", "Technology", TECHNOLOGIES),
 ]
+METADATA_GROUP_NAMES = {
+    "scr_cat": "screening_category",
+    "prog": "promotion_reason",
+    "class": "target_class",
+    "mode": "mode",
+    "mech": "mechanism",
+    "tech": "technology",
+}
 
 
 def measurement_features(concentrations, activities) -> np.ndarray:

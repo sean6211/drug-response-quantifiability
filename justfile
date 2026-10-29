@@ -12,6 +12,9 @@ outcomes:
 cv:
     python scripts/run_random_cv.py
 
+bootstrap:
+    python scripts/run_bootstrap.py
+
 ablation:
     python scripts/run_feature_ablation.py
 
@@ -33,4 +36,7 @@ subgroup:
 calibration:
     python scripts/run_calibration.py
 
-paper: outcomes cv ablation scaffold mechanism rolling importance subgroup
+descriptors:
+    python scripts/run_descriptor_tests.py
+
+paper: outcomes cv bootstrap calibration ablation scaffold mechanism rolling importance subgroup descriptors

@@ -19,6 +19,8 @@ from quantifiability.features import (  # noqa: E402
 )
 from quantifiability.metrics import (  # noqa: E402
     budget_at_retention,
+    cluster_bootstrap,
+    cohens_d,
     recall_at_budget,
     retention_prefix_length,
     yield_at_budget,
@@ -75,6 +77,19 @@ class MetricTests(unittest.TestCase):
         self.assertAlmostEqual(recall_at_budget(labels, scores, 0.5), 1.0)
         self.assertAlmostEqual(budget_at_retention(labels, scores, 1.0), 0.5)
 
+    def test_cohens_d(self):
+        self.assertAlmostEqual(cohens_d([1, 2, 3], [2, 3, 4]), -1.0)
+        self.assertTrue(np.isnan(cohens_d([1], [2, 3])))
+
+    def test_cluster_bootstrap_keeps_clusters_whole(self):
+        clusters = np.array(["a", "a", "b", "b", "c"])
+        sizes = cluster_bootstrap(clusters, lambda rows: len(rows), n_resamples=50, seed=0)
+        self.assertEqual(sizes.shape, (50, 1))
+        draws = cluster_bootstrap(
+            clusters, lambda rows: None if len(rows) > 5 else len(rows), n_resamples=50, seed=0
+        )
+        self.assertTrue(np.all(draws <= 5))
+
 
 class CohortTests(unittest.TestCase):
     def test_matrix_width(self):
@@ -83,6 +98,11 @@ class CohortTests(unittest.TestCase):
         self.assertEqual(len(cohort.groups["three_point"]), 16)
         self.assertEqual(len(cohort.groups["fingerprints"]), 1024)
         self.assertEqual(len(cohort.groups["profiles"]), 9)
+        self.assertEqual(len(cohort.groups["screening_category"]), 7)
+        self.assertEqual(len(cohort.groups["promotion_reason"]), 3)
+        self.assertEqual(len(cohort.groups["annotations"]), 10)
+        names = [cohort.feature_names[i] for i in cohort.groups["annotations"]]
+        self.assertTrue(all(name.startswith(("scr_cat_", "prog_")) for name in names))
 
     def test_historical_profiles(self):
         summary = pd.DataFrame(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rolling release evaluation. Profiles are recomputed from earlier releases only."""
+"""Rolling release evaluation of the full forest. Profiles are recomputed from earlier releases only."""
 
 from __future__ import annotations
 
@@ -20,13 +20,12 @@ from quantifiability.metrics import (  # noqa: E402
     recall_at_budget,
     retention_prefix_length,
 )
-from quantifiability.models import fit_forest, two_stage_scores  # noqa: E402
+from quantifiability.models import fit_forest  # noqa: E402
 
 
 def main() -> None:
     parser = prepared_parser(__doc__)
-    parser.add_argument("--direct-trees", type=int, default=500)
-    parser.add_argument("--stage-trees", type=int, default=300)
+    parser.add_argument("--trees", type=int, default=500)
     parser.add_argument("--min-train", type=int, default=500)
     parser.add_argument("--min-test", type=int, default=200)
     args = parser.parse_args()
@@ -48,52 +47,63 @@ def main() -> None:
             continue
         print(f"Release {release_label(value)}", flush=True)
         features = cohort.with_historical_profiles(value)
-        direct = fit_forest(
+        model = fit_forest(
             features[train],
             cohort.y[train],
             features[test],
-            args.direct_trees,
+            args.trees,
             args.seed,
             args.n_jobs,
         )[0]
-        staged = two_stage_scores(
-            features[train],
-            cohort.y_active[train],
-            cohort.y[train],
-            features[test],
-            n_estimators=args.stage_trees,
-            seed=args.seed,
-            n_jobs=args.n_jobs,
-        )
         screening = features[test, max_col]
         y_test = cohort.y[test]
-        direct_metrics = ranking_metrics(y_test, direct)
-        kept = retention_prefix_length(y_test, staged, 0.90)
+        metrics = ranking_metrics(y_test, model)
+        model_kept = retention_prefix_length(y_test, model, 0.90)
         screening_kept = retention_prefix_length(y_test, screening, 0.90)
         n_test = int(test.sum())
         rows.append(
             {
                 "release": release_label(value),
-                "release_value": float(value),
                 "train_n": int(train.sum()),
                 "test_n": n_test,
                 "quantifiable": int(y_test.sum()),
                 "positive_rate": float(y_test.mean()),
-                "auroc": direct_metrics["AUROC"],
-                "auprc": direct_metrics["AUPRC"],
-                "recall50_model": recall_at_budget(y_test, staged, 0.50),
+                "auroc": metrics["AUROC"],
+                "auprc": metrics["AUPRC"],
+                "recall50_model": recall_at_budget(y_test, model, 0.50),
                 "recall50_screening": recall_at_budget(y_test, screening, 0.50),
-                "budget90_model": kept / n_test,
+                "budget90_model": model_kept / n_test,
                 "budget90_screening": screening_kept / n_test,
-                "experiments_withheld_at_90": n_test - kept,
+                "kept90_model": int(model_kept),
+                "kept90_screening": int(screening_kept),
             }
         )
-    table = pd.DataFrame(rows).drop(columns=["release_value"])
-    withheld = int(table["experiments_withheld_at_90"].sum()) if len(table) else 0
-    tested = int(table["test_n"].sum()) if len(table) else 0
+    table = pd.DataFrame(rows)
     write_table(args.out, "rolling_policy.csv", table)
-    if tested:
-        print(f"{len(table)} releases, withheld {withheld:,} / {tested:,}")
+    if not len(table):
+        return
+    tested = int(table["test_n"].sum())
+    model_kept = int(table["kept90_model"].sum())
+    screening_kept = int(table["kept90_screening"].sum())
+    summary = pd.DataFrame(
+        [
+            {
+                "releases": int(len(table)),
+                "tested": tested,
+                "kept90_model": model_kept,
+                "kept90_screening": screening_kept,
+                "budget90_model": model_kept / tested,
+                "budget90_screening": screening_kept / tested,
+                "fewer_than_screening": screening_kept - model_kept,
+                "reduction_vs_screening": (screening_kept - model_kept) / screening_kept,
+                "fewer_than_profiling_all": tested - model_kept,
+                "releases_smaller_budget": int(
+                    (table["kept90_model"] < table["kept90_screening"]).sum()
+                ),
+            }
+        ]
+    )
+    write_table(args.out, "rolling_summary.csv", summary)
 
 
 if __name__ == "__main__":

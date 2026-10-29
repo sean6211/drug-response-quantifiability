@@ -14,7 +14,19 @@ sys.path[:0] = [str(_ROOT), str(_ROOT / "src")]
 from scripts._common import load_cohort, prepared_parser, write_table  # noqa: E402
 from quantifiability.models import forest  # noqa: E402
 
-GROUP_ORDER = ["three_point", "fingerprints", "profiles", "metadata"]
+GROUP_ORDER = [
+    "three_point",
+    "fingerprints",
+    "assay_profile",
+    "compound_profile",
+    "screening_category",
+    "promotion_reason",
+    "mechanism",
+    "technology",
+    "target_class",
+    "mode",
+    "mutant",
+]
 
 
 def main() -> None:

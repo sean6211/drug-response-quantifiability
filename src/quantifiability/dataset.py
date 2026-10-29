@@ -11,6 +11,7 @@ from quantifiability.features import (
     FP_BITS,
     MEASUREMENT_COLUMNS,
     METADATA_BLOCKS,
+    METADATA_GROUP_NAMES,
     PROFILE_COLUMNS,
     QUANTIFIED_LABEL,
     REPORTED_MAX,
@@ -82,7 +83,10 @@ class Cohort:
         directory = Path(directory)
         feature_names = json.loads((directory / "feature_names.json").read_text())
         raw_groups = json.loads((directory / "groups.json").read_text())
-        groups = {name: np.asarray(indices, dtype=int) for name, indices in raw_groups.items()}
+        groups = column_groups(feature_names)
+        groups.update(
+            {name: np.asarray(indices, dtype=int) for name, indices in raw_groups.items()}
+        )
         return cls(
             X=np.load(directory / "X.npy"),
             y=np.load(directory / "y.npy"),
@@ -114,6 +118,16 @@ def column_groups(feature_names: list[str]) -> dict[str, np.ndarray]:
     }
     groups["mechanism"] = _indices(
         feature_names, [name for name in feature_names if name.startswith("mech_")]
+    )
+    for prefix, _source, levels in METADATA_BLOCKS:
+        groups[METADATA_GROUP_NAMES[prefix]] = _indices(
+            feature_names, [f"{prefix}_{level}" for level in levels]
+        )
+    groups["mutant"] = _indices(feature_names, ["is_mutant"])
+    groups["compound_profile"] = _indices(feature_names, PROFILE_COLUMNS[:6])
+    groups["assay_profile"] = _indices(feature_names, PROFILE_COLUMNS[6:])
+    groups["annotations"] = np.concatenate(
+        [groups["screening_category"], groups["promotion_reason"]]
     )
     return groups
 

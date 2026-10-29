@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Feature-block ablation. Isolated blocks are 5-fold; nested models are 3-fold."""
+"""Feature-block ablation. Isolated blocks and nested models share the same five folds."""
 
 from __future__ import annotations
 
@@ -38,6 +38,7 @@ def _evaluate(x, y, columns, n_splits, trees, seed, n_jobs) -> dict:
 def main() -> None:
     parser = prepared_parser(__doc__)
     parser.add_argument("--trees", type=int, default=300)
+    parser.add_argument("--splits", type=int, default=5)
     args = parser.parse_args()
     cohort = load_cohort(args.data)
     y = cohort.y
@@ -52,9 +53,9 @@ def main() -> None:
     isolated_rows = []
     for name, columns in isolated.items():
         print(f"Isolated: {name}", flush=True)
-        row = _evaluate(cohort.X, y, columns, 5, args.trees, args.seed, args.n_jobs)
+        row = _evaluate(cohort.X, y, columns, args.splits, args.trees, args.seed, args.n_jobs)
         row["feature_set"] = name
-        row["design"] = "isolated_five_fold"
+        row["design"] = "isolated"
         isolated_rows.append(row)
 
     nested_sets = [
@@ -67,9 +68,9 @@ def main() -> None:
     previous = None
     for name, columns in nested_sets:
         print(f"Nested: {name}", flush=True)
-        row = _evaluate(cohort.X, y, columns, 3, args.trees, args.seed, args.n_jobs)
+        row = _evaluate(cohort.X, y, columns, args.splits, args.trees, args.seed, args.n_jobs)
         row["feature_set"] = name
-        row["design"] = "nested_three_fold"
+        row["design"] = "nested"
         row["delta_auroc"] = (
             float("nan") if previous is None else row["AUROC_mean"] - previous
         )
